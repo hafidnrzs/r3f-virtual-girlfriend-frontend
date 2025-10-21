@@ -74,9 +74,7 @@ const corresponding = {
 let setupMode = false;
 
 export function Avatar(props) {
-  const { nodes, materials, scene } = useGLTF(
-    "models/68e75d991df78dfe0fc1bdd7.glb"
-  );
+  const { nodes, materials, scene } = useGLTF("models/model-hijab.glb");
   const { message, onMessagePlayed, chat } = useChat();
 
   const [lipsync, setLipsync] = useState();
@@ -307,9 +305,9 @@ export function Avatar(props) {
         morphTargetInfluences={nodes.Wolf3D_Teeth.morphTargetInfluences}
       />
       <skinnedMesh
-        geometry={nodes.Wolf3D_Hair.geometry}
-        material={materials.Wolf3D_Hair}
-        skeleton={nodes.Wolf3D_Hair.skeleton}
+        geometry={nodes.Wolf3D_Headwear.geometry}
+        material={materials.Wolf3D_Headwear}
+        skeleton={nodes.Wolf3D_Headwear.skeleton}
       />
       <skinnedMesh
         geometry={nodes.Wolf3D_Body.geometry}
@@ -335,5 +333,5 @@ export function Avatar(props) {
   );
 }
 
-useGLTF.preload("/models/68e75d991df78dfe0fc1bdd7.glb");
+useGLTF.preload("/models/model-hijab.glb");
 useGLTF.preload("/models/animations.glb");
