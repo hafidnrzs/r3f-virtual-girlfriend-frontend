@@ -1,11 +1,16 @@
 import { useRef } from "react";
-import { useChat } from "../hooks/useChat";
+import { useChat } from "@/hooks/useChat";
 
-export const UI = ({ hidden, ...props }) => {
-  const input = useRef();
+interface UIProps {
+  hidden?: boolean;
+}
+
+export const UI = ({ hidden, ...props }: UIProps) => {
+  const input = useRef<HTMLInputElement>(null);
   const { chat, loading, cameraZoomed, setCameraZoomed, message } = useChat();
 
   const sendMessage = () => {
+    if (!input.current) return;
     const text = input.current.value;
     if (!loading && !message) {
       chat(text);
@@ -63,10 +68,10 @@ export const UI = ({ hidden, ...props }) => {
           <button
             onClick={() => {
               const body = document.querySelector("body");
-              if (body.classList.contains("greenScreen")) {
+              if (body?.classList.contains("greenScreen")) {
                 body.classList.remove("greenScreen");
               } else {
-                body.classList.add("greenScreen");
+                body?.classList.add("greenScreen");
               }
             }}
             className="pointer-events-auto bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-md"
@@ -98,7 +103,7 @@ export const UI = ({ hidden, ...props }) => {
             }}
           />
           <button
-            disabled={loading || message}
+            disabled={loading || !!message}
             onClick={sendMessage}
             className={`bg-blue-500 hover:bg-blue-600 text-white p-4 px-10 font-semibold uppercase rounded-md ${
               loading || message ? "cursor-not-allowed opacity-30" : ""

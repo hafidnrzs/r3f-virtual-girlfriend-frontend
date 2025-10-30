@@ -6,10 +6,11 @@ This is the frontend for Vina, an AI homeschooling app. The AI agent acts as a v
 
 ## Tech Stack
 
-- React 18 + Vite
+- React 18 + Vite + TypeScript
 - React Three Fiber (R3F) + Drei (3D rendering)
 - LiveKit (real-time communication)
 - Tailwind CSS + Framer Motion (UI/animation)
+- pnpm (package manager)
 
 The avatar is created with ReadyPlayerMe and rendered using React Three Fiber.
 
@@ -17,22 +18,37 @@ The avatar is created with ReadyPlayerMe and rendered using React Three Fiber.
 
 ### First-time setup:
 ```bash
-yarn
+pnpm install
 ```
 
 ### Install a new dependency:
 ```bash
-yarn add <package-name>
+pnpm add <package-name>
 ```
 
 ### Run development server:
 ```bash
-yarn dev
+pnpm dev
 ```
+
+### Run type checking:
+```bash
+pnpm typecheck
+```
+
+## TypeScript Migration (October 2025)
+
+The project has been migrated to TypeScript with the following:
+- Incremental migration support (`allowJs: true`)
+- Path alias: `@/*` maps to `src/*`
+- Type definitions in `src/types/`
+- Asset module declarations in `src/global.d.ts`
+
+All files have been converted to TypeScript except `Avatar.jsx` (per critical rules below).
 
 ## LiveKit Integration
 
-The room connection is established in `App.jsx` using the `livekit-client` library. It requests a token from the server at `/api/connection-details` to obtain the connection token and room URL.
+The room connection is established in `App.tsx` using the `livekit-client` library. It requests a token from the server at `/api/connection-details` to obtain the connection token and room URL.
 
 ## Critical Rules
 

@@ -5,10 +5,10 @@ import {
   Text,
 } from "@react-three/drei";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useChat } from "../hooks/useChat";
+import { useChat } from "@/hooks/useChat";
 import { Avatar } from "./Avatar";
 
-const Dots = (props) => {
+const Dots = (props: JSX.IntrinsicElements['group']) => {
   const { loading } = useChat();
   const [loadingText, setLoadingText] = useState("");
   useEffect(() => {
@@ -38,18 +38,18 @@ const Dots = (props) => {
 };
 
 export const Experience = () => {
-  const cameraControls = useRef();
+  const cameraControls = useRef<CameraControls>(null);
   const { cameraZoomed } = useChat();
 
   useEffect(() => {
-    cameraControls.current.setLookAt(0, 2, 5, 0, 1.5, 0);
+    cameraControls.current?.setLookAt(0, 2, 5, 0, 1.5, 0);
   }, []);
 
   useEffect(() => {
     if (cameraZoomed) {
-      cameraControls.current.setLookAt(0, 1.5, 1.5, 0, 1.5, 0, true);
+      cameraControls.current?.setLookAt(0, 1.5, 1.5, 0, 1.5, 0, true);
     } else {
-      cameraControls.current.setLookAt(0, 2.2, 5, 0, 1.0, 0, true);
+      cameraControls.current?.setLookAt(0, 2.2, 5, 0, 1.0, 0, true);
     }
   }, [cameraZoomed]);
   return (

@@ -1,11 +1,16 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import type { Message, ChatContextValue } from "@/types/chat";
 
 const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-const ChatContext = createContext();
+const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 
-export const ChatProvider = ({ children }) => {
-  const chat = async (message) => {
+interface ChatProviderProps {
+  children: ReactNode;
+}
+
+export const ChatProvider = ({ children }: ChatProviderProps) => {
+  const chat = async (message: string) => {
     setLoading(true);
     const data = await fetch(`${backendUrl}/chat`, {
       method: "POST",
@@ -14,12 +19,12 @@ export const ChatProvider = ({ children }) => {
       },
       body: JSON.stringify({ message }),
     });
-    const resp = (await data.json()).messages;
+    const resp = (await data.json()).messages as Message[];
     setMessages((messages) => [...messages, ...resp]);
     setLoading(false);
   };
-  const [messages, setMessages] = useState([]);
-  const [message, setMessage] = useState();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [message, setMessage] = useState<Message | null>(null);
   const [loading, setLoading] = useState(false);
   const [cameraZoomed, setCameraZoomed] = useState(true);
   const onMessagePlayed = () => {
@@ -50,7 +55,7 @@ export const ChatProvider = ({ children }) => {
   );
 };
 
-export const useChat = () => {
+export const useChat = (): ChatContextValue => {
   const context = useContext(ChatContext);
   if (!context) {
     throw new Error("useChat must be used within a ChatProvider");

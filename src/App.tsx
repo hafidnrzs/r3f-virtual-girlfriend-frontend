@@ -1,9 +1,9 @@
 import { Loader } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Leva } from "leva";
-import { Experience } from "./components/Experience";
-import { UI } from "./components/UI";
-import { IllustrationPanel } from "./components/IllustrationPanel";
+import { Experience } from "@/components/Experience";
+import { UI } from "@/components/UI";
+import { IllustrationPanel } from "@/components/IllustrationPanel";
 
 import { RoomContext, useVoiceAssistant } from "@livekit/components-react";
 import { Room, RoomEvent } from "livekit-client";
@@ -21,7 +21,10 @@ function App() {
         window.location.origin
       );
 
-      const response = await fetch(url.toString());
+      const response = await fetch(url.toString(), {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
       if (!response.ok) {
         throw new Error(
           `Failed to fetch connection details: ${response.status}`
@@ -61,11 +64,22 @@ function App() {
   );
 }
 
-function ConnectButton({ onConnectButtonClicked, agentState }) {
+interface ConnectButtonProps {
+  onConnectButtonClicked: () => void;
+  agentState: string;
+}
+
+function ConnectButton({
+  onConnectButtonClicked,
+  agentState,
+}: ConnectButtonProps) {
+  const isConnecting = agentState === "connecting";
+  const isDisconnected = agentState === "disconnected";
+
   return (
     <>
       <AnimatePresence mode="wait" initial={false}>
-        {agentState === "disconnected" && (
+        {isDisconnected && (
           <motion.div
             key="connect-overlay"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -79,12 +93,10 @@ function ConnectButton({ onConnectButtonClicked, agentState }) {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, delay: 0.1 }}
               className="uppercase px-4 py-2 bg-white text-black rounded-md disabled:opacity-60"
-              disabled={agentState === "connecting"}
+              disabled={isConnecting}
               onClick={onConnectButtonClicked}
             >
-              {agentState === "connecting"
-                ? "Connecting..."
-                : "Start a conversation"}
+              {isConnecting ? "Connecting..." : "Start a conversation"}
             </motion.button>
           </motion.div>
         )}
@@ -107,7 +119,11 @@ function AgentCanvas() {
   );
 }
 
-function SimpleAssistant({ onConnectButtonClicked }) {
+interface SimpleAssistantProps {
+  onConnectButtonClicked: () => void;
+}
+
+function SimpleAssistant({ onConnectButtonClicked }: SimpleAssistantProps) {
   const { state: agentState } = useVoiceAssistant();
 
   return (
@@ -129,7 +145,7 @@ function SimpleAssistant({ onConnectButtonClicked }) {
   );
 }
 
-function onDeviceFailure(error) {
+function onDeviceFailure(error?: Error) {
   console.error(error);
   alert(
     "Error acquiring camera or microphone permissions. Please make sure you grant the necessary permissions in your browser and reload the tab"
