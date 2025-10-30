@@ -1,23 +1,35 @@
-import { Loader } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Leva } from "leva";
 import { Experience } from "@/components/Experience";
 import { UI } from "@/components/UI";
 import { IllustrationPanel } from "@/components/IllustrationPanel";
 
-import { RoomContext, useVoiceAssistant } from "@livekit/components-react";
+import {
+  Chat,
+  ChatCloseIcon,
+  ChatEntry,
+  ControlBar,
+  DisconnectButton,
+  LayoutContext,
+  LayoutContextProvider,
+  RoomAudioRenderer,
+  RoomContext,
+  useVoiceAssistant,
+  VoiceAssistantControlBar,
+} from "@livekit/components-react";
+import "@livekit/components-styles";
 import { Room, RoomEvent } from "livekit-client";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import TranscriptionView from "./components/TranscriptionView";
 
 function App() {
   const [room] = useState(new Room());
 
   const onConnectButtonClicked = useCallback(async () => {
     try {
-      const apiUrl = import.meta.env?.VITE_API_URL;
       const url = new URL(
-        apiUrl ?? "/api/connection-details",
+        import.meta.env?.VITE_API_URL ?? "/api/connection-details",
         window.location.origin
       );
 
@@ -36,8 +48,8 @@ function App() {
         connectionDetailsData.serverUrl,
         connectionDetailsData.participantToken
       );
-      // Microphone disabled for text-only input
-      await room.localParticipant.setMicrophoneEnabled(false);
+
+      await room.localParticipant.setMicrophoneEnabled(true);
     } catch (err) {
       console.error("Connection failed:", err);
       alert(
@@ -55,53 +67,13 @@ function App() {
   }, [room]);
 
   return (
-    <RoomContext.Provider value={room}>
-      <div className="relative w-full h-full">
-        <AgentCanvas />
-        <SimpleAssistant onConnectButtonClicked={onConnectButtonClicked} />
-      </div>
-    </RoomContext.Provider>
-  );
-}
-
-interface ConnectButtonProps {
-  onConnectButtonClicked: () => void;
-  agentState: string;
-}
-
-function ConnectButton({
-  onConnectButtonClicked,
-  agentState,
-}: ConnectButtonProps) {
-  const isConnecting = agentState === "connecting";
-  const isDisconnected = agentState === "disconnected";
-
-  return (
-    <>
-      <AnimatePresence mode="wait" initial={false}>
-        {isDisconnected && (
-          <motion.div
-            key="connect-overlay"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3, ease: [0.09, 1.04, 0.245, 1.055] }}
-            className="absolute inset-0 z-20 grid place-items-center"
-          >
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-              className="uppercase px-4 py-2 bg-white text-black rounded-md disabled:opacity-60"
-              disabled={isConnecting}
-              onClick={onConnectButtonClicked}
-            >
-              {isConnecting ? "Connecting..." : "Start a conversation"}
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+    <main data-lk-theme="default" className="h-full bg-[var(--lk-bg)]">
+      <RoomContext.Provider value={room}>
+        <div className="relative w-full h-full">
+          <SimpleAssistant onConnectButtonClicked={onConnectButtonClicked} />
+        </div>
+      </RoomContext.Provider>
+    </main>
   );
 }
 
@@ -110,7 +82,7 @@ function AgentCanvas() {
 
   return (
     <Canvas
-      className="absolute inset-0 z-0"
+      className="absolute inset-0 z-0 h-full"
       shadows
       camera={{ position: [0, 0, 1], fov: 30 }}
     >
@@ -119,28 +91,60 @@ function AgentCanvas() {
   );
 }
 
-interface SimpleAssistantProps {
-  onConnectButtonClicked: () => void;
-}
-
-function SimpleAssistant({ onConnectButtonClicked }: SimpleAssistantProps) {
+function SimpleAssistant(props: { onConnectButtonClicked: () => void }) {
   const { state: agentState } = useVoiceAssistant();
 
   return (
     <>
-      {agentState !== "disconnected" ? (
-        <>
-          <Loader />
+      {agentState === "disconnected" ? (
+        <motion.div
+          key="disconnected"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.3, ease: [0.09, 1.04, 0.245, 1.055] }}
+          className="grid items-center justify-center h-full"
+        >
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="uppercase px-4 py-2 bg-white text-black rounded-md"
+            onClick={() => props.onConnectButtonClicked()}
+          >
+            Start a conversation
+          </motion.button>
+        </motion.div>
+      ) : (
+        <motion.div
+          key="connected"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3, ease: [0.09, 1.04, 0.245, 1.055] }}
+          className="flex flex-col items-center gap-4 h-full"
+        >
+          {/* <AgentCanvas /> */}
           <Leva hidden />
-          <IllustrationPanel />
-          <UI />
-        </>
-      ) : null}
-
-      <ConnectButton
-        onConnectButtonClicked={onConnectButtonClicked}
-        agentState={agentState}
-      />
+          {/* <IllustrationPanel /> */}
+          {/* <UI /> */}
+          <LayoutContextProvider>
+            <div className="flex-1 w-full">
+              <TranscriptionView />
+              <Chat />
+            </div>
+            <div className="w-full space-y-4">
+              <div className="flex w-full justify-center items-center">
+                <ControlBar
+                  variation="minimal"
+                  controls={{ camera: false, screenShare: false, chat: true }}
+                />
+              </div>
+            </div>
+          </LayoutContextProvider>
+          <RoomAudioRenderer />
+        </motion.div>
+      )}
     </>
   );
 }
