@@ -42,7 +42,7 @@ function App() {
         connectionDetailsData.participantToken
       );
 
-      await room.localParticipant.setMicrophoneEnabled(true);
+      await room.localParticipant.setMicrophoneEnabled(false);
     } catch (err) {
       console.error("Connection failed:", err);
       alert(

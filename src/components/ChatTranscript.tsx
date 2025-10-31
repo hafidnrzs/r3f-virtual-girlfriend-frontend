@@ -18,27 +18,31 @@ export function ChatTranscript({
     <AnimatePresence>
       <motion.div {...props}>
         <ul className="space-y-3">
-          {messages.map((msg: any) => {
-            // Support both ReceivedChatMessage and SimpleChatMessage
-            const timestamp = msg.timestamp;
-            const message = msg.message;
-            const messageOrigin =
-              msg.messageOrigin || (msg.from ? "remote" : "local");
-            const name = msg.senderName || msg.from?.name;
-            const hasBeenEdited = !!msg.editTimestamp;
-            const id = msg.id;
+          {messages.map(
+            ({
+              id,
+              timestamp,
+              from,
+              editTimestamp,
+              message,
+            }: ReceivedChatMessage) => {
+              // Support both ReceivedChatMessage and SimpleChatMessage
+              const locale = navigator?.language ?? "id-ID";
+              const messageOrigin = from?.isLocal ? "local" : "remote";
+              const hasBeenEdited = !!editTimestamp;
 
-            return (
-              <ChatEntry
-                key={id}
-                timestamp={timestamp}
-                message={message}
-                messageOrigin={messageOrigin}
-                name={name}
-                hasBeenEdited={hasBeenEdited}
-              />
-            );
-          })}
+              return (
+                <ChatEntry
+                  key={id}
+                  locale={locale}
+                  timestamp={timestamp}
+                  message={message}
+                  messageOrigin={messageOrigin}
+                  hasBeenEdited={hasBeenEdited}
+                />
+              );
+            }
+          )}
         </ul>
       </motion.div>
     </AnimatePresence>
