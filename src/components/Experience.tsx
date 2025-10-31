@@ -40,18 +40,27 @@ const Dots = (props: JSX.IntrinsicElements['group']) => {
 export const Experience = () => {
   const cameraControls = useRef<CameraControls>(null);
   const { cameraZoomed } = useChat();
+  const [isInitialized, setIsInitialized] = useState(false);
 
+  // Initialize camera position once
   useEffect(() => {
-    cameraControls.current?.setLookAt(0, 2, 5, 0, 1.5, 0);
-  }, []);
-
-  useEffect(() => {
-    if (cameraZoomed) {
-      cameraControls.current?.setLookAt(0, 1.5, 1.5, 0, 1.5, 0, true);
-    } else {
-      cameraControls.current?.setLookAt(0, 2.2, 5, 0, 1.0, 0, true);
+    if (cameraControls.current && !isInitialized) {
+      cameraControls.current.setLookAt(0, 2, 5, 0, 1.5, 0, false);
+      setIsInitialized(true);
     }
-  }, [cameraZoomed]);
+  }, [isInitialized]);
+
+  // Handle camera zoom changes
+  useEffect(() => {
+    if (!isInitialized || !cameraControls.current) return;
+
+    if (cameraZoomed) {
+      cameraControls.current.setLookAt(0, 1.5, 1.5, 0, 1.5, 0, true);
+    } else {
+      cameraControls.current.setLookAt(0, 2.2, 5, 0, 1.0, 0, true);
+    }
+  }, [cameraZoomed, isInitialized]);
+
   return (
     <>
       <CameraControls ref={cameraControls} />

@@ -1,27 +1,20 @@
-import { Canvas } from "@react-three/fiber";
 import { Leva } from "leva";
-import { Experience } from "@/components/Experience";
-import { UI } from "@/components/UI";
-import { IllustrationPanel } from "@/components/IllustrationPanel";
+import { AvatarPanel } from "@/components/AvatarPanel";
+import { ChatPanel } from "@/components/ChatPanel";
+import { ControlBar } from "@/components/ControlBar";
+import { ChatProvider } from "@/hooks/useChat";
 
 import {
-  Chat,
-  ChatCloseIcon,
-  ChatEntry,
-  ControlBar,
-  DisconnectButton,
-  LayoutContext,
   LayoutContextProvider,
   RoomAudioRenderer,
   RoomContext,
   useVoiceAssistant,
-  VoiceAssistantControlBar,
+  useLocalParticipant,
 } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { Room, RoomEvent } from "livekit-client";
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import TranscriptionView from "./components/TranscriptionView";
+import { motion } from "motion/react";
 
 function App() {
   const [room] = useState(new Room());
@@ -69,30 +62,19 @@ function App() {
   return (
     <main data-lk-theme="default" className="h-full bg-[var(--lk-bg)]">
       <RoomContext.Provider value={room}>
-        <div className="relative w-full h-full">
-          <SimpleAssistant onConnectButtonClicked={onConnectButtonClicked} />
-        </div>
+        <ChatProvider>
+          <div className="relative w-full h-full overflow-hidden">
+            <SimpleAssistant onConnectButtonClicked={onConnectButtonClicked} />
+          </div>
+        </ChatProvider>
       </RoomContext.Provider>
     </main>
   );
 }
 
-function AgentCanvas() {
-  const { state: agentState } = useVoiceAssistant();
-
-  return (
-    <Canvas
-      className="absolute inset-0 z-0 h-full"
-      shadows
-      camera={{ position: [0, 0, 1], fov: 30 }}
-    >
-      {agentState !== "disconnected" && <Experience />}
-    </Canvas>
-  );
-}
-
 function SimpleAssistant(props: { onConnectButtonClicked: () => void }) {
   const { state: agentState } = useVoiceAssistant();
+  const { isMicrophoneEnabled } = useLocalParticipant();
 
   return (
     <>
@@ -122,25 +104,22 @@ function SimpleAssistant(props: { onConnectButtonClicked: () => void }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3, ease: [0.09, 1.04, 0.245, 1.055] }}
-          className="flex flex-col items-center gap-4 h-full"
+          className="h-screen grid grid-rows-[1fr_auto]"
         >
-          {/* <AgentCanvas /> */}
           <Leva hidden />
-          {/* <IllustrationPanel /> */}
-          {/* <UI /> */}
           <LayoutContextProvider>
-            <div className="flex-1 w-full">
-              <TranscriptionView />
-              <Chat />
+            {/* Main content row - two columns (2/5 and 3/5) */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-hidden">
+              <AvatarPanel />
+              <ChatPanel />
             </div>
-            <div className="w-full space-y-4">
-              <div className="flex w-full justify-center items-center">
-                <ControlBar
-                  variation="minimal"
-                  controls={{ camera: false, screenShare: false, chat: true }}
-                />
-              </div>
-            </div>
+
+            {/* Control bar row - fixed height */}
+            <ControlBar
+              micOn={isMicrophoneEnabled}
+              onToggleMic={() => {}}
+              onDisconnect={() => {}}
+            />
           </LayoutContextProvider>
           <RoomAudioRenderer />
         </motion.div>
