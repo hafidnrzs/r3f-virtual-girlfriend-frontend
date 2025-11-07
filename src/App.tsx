@@ -3,6 +3,9 @@ import { AvatarPanel } from "@/components/AvatarPanel";
 import { ChatPanel } from "@/components/ChatPanel";
 import { ControlBar } from "@/components/ControlBar";
 import { ChatProvider } from "@/hooks/useChat";
+import { IllustrationProvider } from "@/hooks/useIllustration";
+import { Illustration } from "@/components/Illustration";
+import { IllustrationRpcHandler } from "@/components/IllustrationRpcHandler";
 
 import {
   LayoutContextProvider,
@@ -12,12 +15,20 @@ import {
   useLocalParticipant,
 } from "@livekit/components-react";
 import "@livekit/components-styles";
-import { Room, RoomEvent } from "livekit-client";
+import { Room, RoomEvent, RpcInvocationData } from "livekit-client";
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
 
 function App() {
   const [room] = useState(new Room());
+
+  // Expose room to window for debugging/testing (development only)
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      (window as any).__LIVEKIT_ROOM__ = room;
+      console.log("[Dev] Room instance exposed as window.__LIVEKIT_ROOM__");
+    }
+  }, [room]);
 
   const onConnectButtonClicked = useCallback(async () => {
     try {
@@ -63,9 +74,11 @@ function App() {
     <main data-lk-theme="default" className="h-full bg-[var(--lk-bg)]">
       <RoomContext.Provider value={room}>
         <ChatProvider>
-          <div className="relative w-full h-full overflow-hidden">
-            <SimpleAssistant onConnectButtonClicked={onConnectButtonClicked} />
-          </div>
+          <IllustrationProvider>
+            <div className="relative w-full h-full overflow-hidden">
+              <SimpleAssistant onConnectButtonClicked={onConnectButtonClicked} />
+            </div>
+          </IllustrationProvider>
         </ChatProvider>
       </RoomContext.Provider>
     </main>
@@ -108,6 +121,9 @@ function SimpleAssistant(props: { onConnectButtonClicked: () => void }) {
         >
           <Leva hidden />
           <LayoutContextProvider>
+            {/* Register RPC handler */}
+            <IllustrationRpcHandler />
+            
             {/* Main content row - two columns (2/5 and 3/5) */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-hidden">
               <AvatarPanel />
@@ -121,6 +137,10 @@ function SimpleAssistant(props: { onConnectButtonClicked: () => void }) {
               onDisconnect={() => {}}
             />
           </LayoutContextProvider>
+          
+          {/* Illustration component - absolute positioned */}
+          <Illustration />
+          
           <RoomAudioRenderer />
         </motion.div>
       )}

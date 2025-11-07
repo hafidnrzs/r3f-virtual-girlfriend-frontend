@@ -1,96 +1,123 @@
-# Task 1 — Create a responsive two-row grid layout
+## Task: Illustration component + RPC control
 
-## Goal
+Goal
+--
+Add a small top-right illustration component that can be shown/hidden and set to display an image from an external URL. Control the component via a LiveKit RPC method so other clients or server logic can toggle visibility and change the image.
 
-Create a full-height, responsive layout in `src/App.tsx` that contains two rows:
+High-level requirements
+--
+- Component location: absolute, pinned to the top-right of the viewport (or container) with a small margin.
+- Aspect ratio: 5:4 (width:height). The rendered image inside the component should preserve its own aspect ratio and be fully visible (no cropping).
+- Exposed control: register a LiveKit RPC method to update the component's state and image URL. RPC name: `client.showIllustration`.
+- Payload shape: a small JSON contract (see below).
 
-- The main content row (split 2/5 | 3/5) for the avatar area and chat UI.
-- A full-width control bar row at the bottom with microphone toggle, visualizer, and disconnect button.
+Payload contract (single source of truth)
+--
+The RPC will receive an object with these fields:
 
-## Files to edit
+{
+  "state": "show" | "hidden",
+  "image_url": string | null
+}
 
-- `src/App.tsx` — create the grid container and use the existing components (or placeholders).
-- (Optional) Create small components to keep code tidy: `components/AvatarPanel.tsx`, `components/ChatPanel.tsx`, `components/ControlBar.tsx`.
+- `state` controls whether the component is visible. Two allowed values: `show` and `hidden`.
+- `image_url` is an absolute URL to the image to display. When null or empty and `state` is `show`, the component should render a default placeholder (or remain hidden, see acceptance criteria).
 
-## Layout requirements (explicit)
+Component contract (developer-facing)
+--
+- Component name suggestion: `Illustration.tsx` (React + TypeScript). Keep it small and self-contained.
+- Props (for local usage / testing):
+  - `visible: boolean`
+  - `imageUrl?: string`
+  - `onClose?: () => void` (optional close callback)
+- Styling: absolute top-right with a margin; CSS must enforce 5:4 aspect ratio. Prefer modern CSS (aspect-ratio) but include a fallback using padding-top if necessary.
+- Image rendering: use `object-fit: contain` to preserve aspect ratio and avoid cropping.
 
-1. Full viewport height: the app must fill the browser height (100vh).
-2. Two rows:
-   - Row 1 (main): takes remaining space above the control bar.
-   - Row 2 (controls): fixed height (e.g., ~64px) across the full width.
-3. Main row content is a two-column split: 2/5 (40%) on the left for the avatar area, 3/5 (60%) on the right for chat.
-4. The left column shows a centered placeholder for the 3D avatar and a small area for a future visualizer.
-5. The right column is the chat panel: a scrollable transcript area above and a compact chat input pinned/stuck to the bottom of the panel.
+Example UI/JSX (concept)
+--
+This is a minimal example the agent can implement or adapt to the codebase conventions (TSX + Tailwind/CSS-in-JS etc):
 
-## Desktop (recommended CSS/Tailwind behavior)
+// Illustration.tsx (conceptual)
+import React from 'react';
 
-- Use CSS Grid for the overall page: grid with two rows: main and controls.
-- For the main row, use a 5-column fraction grid (or set widths via percentages): left 2fr, right 3fr.
-- Example Tailwind container classes (for guidance):
-  - Outer container: `h-screen grid grid-rows-[1fr_auto] gap-4` — fills viewport and provides a fixed controls row.
-  - Main area: `grid grid-cols-5 gap-4`.
-  - Left panel: `col-span-2 flex items-center justify-center bg-gray-50 p-4` (placeholder centered text).
-  - Right panel: `col-span-3 flex flex-col` with transcript as `flex-1 overflow-auto` and input as `h-14 sticky bottom-0`.
+type Props = { visible: boolean; imageUrl?: string; onClose?: () => void };
 
-## Mobile / small screens
+export default function Illustration({ visible, imageUrl, onClose }: Props) {
+  if (!visible) return null;
+  return (
+    <div className="illustration-root" aria-hidden={!visible}>
+      <img src={imageUrl ?? '/placeholder.png'} alt="illustration" />
+      {onClose && <button onClick={onClose}>Close</button>}
+    </div>
+  );
+}
 
-- Stack content vertically on narrow viewports: avatar first, then chat, then controls.
-- Use responsive Tailwind utilities (e.g., `md:grid-cols-5` and `grid-cols-1` for small screens).
+Example CSS notes
+--
+- Container: position: absolute; top: 16px; right: 16px; width: clamp(160px, 18vw, 320px); aspect-ratio: 5/4; z-index: high.
+- Image: width: 100%; height: 100%; object-fit: contain; display: block;
 
-## Control bar (second row)
+RPC registration
+--
+Register a single RPC method that updates the component state. Use `room.registerRpcMethod(name, handler)` provided by LiveKit. The handler receives an invocation object containing `payload` and `callerIdentity`.
 
-- Full width across the bottom.
-- Fixed (or visually fixed inside the grid) height: recommended ~56–72px.
-- Items aligned horizontally: left area for visualizer, center (optional), right area for primary controls (microphone toggle, disconnect).
-- Microphone toggle: visible state (on/off) and accessible label.
-- Disconnect button: visually distinct, aligned to the right.
+Example TypeScript handler (conceptual):
 
-## Accessibility & interaction details
+room.registerRpcMethod("client.showIllustration", async (data: RpcInvocationData) => {
+  const payload = data.payload as { state: 'show' | 'hidden'; image_url?: string | null };
+  // Update local component state: set visible = payload.state === 'show', imageUrl = payload.image_url
+  // Return an acknowledgement if needed
+  return { ok: true };
+});
 
-- All interactive controls must have accessible labels (aria-label / title).
-- Keyboard focus states should be visible.
-- Chat input should autofocus when the user opens the page (optional).
+Notes for the agent wiring the RPC
+--
+- The RPC handler must validate the incoming payload (types and allowed values). Ignore or reject unknown fields.
+- Prefer a small wrapper function that applies the incoming state to the React component (for example, via context, a global store, or via a room-scoped state object that the component subscribes to).
+- The RPC should return a simple response (ack or error). If rejecting, return a readable error message.
 
-## Suggested component contract
+Acceptance criteria
+--
+1. The `Illustration` component renders in the top-right with a 5:4 ratio and the image visible and fully contained.
+2. Sending an RPC invocation with `{ state: 'show', image_url: '<url>' }` displays the component with that image.
+3. Sending `{ state: 'hidden' }` hides the component.
+4. Invalid payloads are ignored and an error response is returned by the RPC handler.
 
-- AvatarPanel
-  - Props: none for now; shows placeholder text and a "visualizer" area.
-- ChatPanel
-  - Props: messages: ChatMessage[]
-  - Behavior: scrolls to bottom on new message; input is sticky at bottom; exposes onSend(message).
-- ControlBar
-  - Props: micOn: boolean, onToggleMic(), onDisconnect()
-  - Contains a small visualizer placeholder and primary controls.
+Edge cases and UX details
+--
+- If `image_url` is missing or 404s, fall back to a local placeholder or hide the component depending on the product preference.
+- Rapid repeated RPC calls: ensure the handler is idempotent (setting the same state twice is safe).
+- Cross-origin images: ensure the component sets `crossOrigin` if required, or rely on browser defaults.
 
-## Acceptance criteria (how we'll know it's done)
+Testing and verification
+--
+Manual test steps:
+1. Start the app and open the UI that hosts the `Illustration` component.
+2. In the client connection logic (where `room` is available), call the handler directly or use a test RPC invocation to simulate remote calls.
+3. Verify acceptance criteria 1-3.
 
-1. Launching the frontend (`pnpm dev`) shows a full-height layout with two rows.
-2. The top row is split approximately 40% (avatar) / 60% (chat).
-3. The chat transcript area scrolls independently and the input stays pinned to the bottom of the chat panel.
-4. The control bar is always visible at the bottom of the viewport and contains a mic toggle and disconnect button.
-5. Layout collapses to a single-column stack on small screens.
+Automated test suggestions:
+- Small unit test for the component rendering visible/hidden and `imageUrl` prop.
+- Integration test (or a small script) that registers the RPC and invokes it with the sample payload.
 
-## Quick implementation notes
+Sample test payloads
+--
+- Valid show:
+  { "state": "show", "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Triangle_illustration.svg/250px-Triangle_illustration.svg.png" }
+- Valid hide:
+  { "state": "hidden" }
+- Invalid:
+  { "state": "visible" }  // rejected: not an allowed value
 
-- Keep changes minimal in `src/App.tsx`: add the grid container and simple placeholders.
-- Use Tailwind utilities already in the project; no new CSS files are required for this task.
-- If you prefer, split into the three small components listed above to keep `App.tsx` tidy.
+Next steps for implementer
+--
+1. Implement `src/components/Illustration.tsx` following the component contract and styling notes.
+2. Wire a small state store or React context that the component reads from.
+3. Register `client.showIllustration` in the client connection code that has access to `room` and validate payloads before updating the store.
+4. Add the brief unit tests and perform manual QA.
 
-## How to test locally
+References
+--
+- LiveKit RPC docs: https://docs.livekit.io/home/client/data/rpc/
 
-1. Start the dev server in the frontend folder:
-
-```pwsh
-pnpm dev
-```
-
-2. Open the app in a browser and verify the acceptance criteria.
-
-## Next steps (optional)
-
-- Replace placeholders with the 3D avatar canvas and real audio visualizer.
-- Wire the control bar to LiveKit connection state and mic input.
-
-## Notes
-
-- Do not hardcode any API URLs or secrets into the frontend. Keep the layout purely presentational for this task.
+If you want, I can implement a starter `Illustration.tsx` + minimal CSS and show the exact code to register the RPC in the existing connection code.
