@@ -4,7 +4,6 @@ import { ChatPanel } from "@/components/ChatPanel";
 import { ControlBar } from "@/components/ControlBar";
 import { ChatProvider } from "@/hooks/useChat";
 import { IllustrationProvider } from "@/hooks/useIllustration";
-import { Illustration } from "@/components/Illustration";
 import { IllustrationRpcHandler } from "@/components/IllustrationRpcHandler";
 
 import {
@@ -124,8 +123,8 @@ function SimpleAssistant(props: { onConnectButtonClicked: () => void }) {
             {/* Register RPC handler */}
             <IllustrationRpcHandler />
             
-            {/* Main content row - two columns (2/5 and 3/5) */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-hidden">
+            {/* Main content row - fixed 70/30 split */}
+            <div className="grid grid-cols-1 md:grid-cols-[7fr_3fr] gap-4 overflow-hidden h-full">
               <AvatarPanel />
               <ChatPanel />
             </div>
@@ -137,10 +136,7 @@ function SimpleAssistant(props: { onConnectButtonClicked: () => void }) {
               onDisconnect={() => {}}
             />
           </LayoutContextProvider>
-          
-          {/* Illustration component - absolute positioned */}
-          <Illustration />
-          
+
           <RoomAudioRenderer />
         </motion.div>
       )}

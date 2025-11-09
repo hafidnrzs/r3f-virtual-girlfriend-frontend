@@ -24,14 +24,14 @@ export function ChatPanel() {
   const isAgentAvailable = participants.some((p) => p.isAgent);
 
   return (
-    <div className="col-span-1 md:col-span-3 flex flex-col h-full border-l border-gray-700 p-3">
+    <div className="flex flex-col h-full border-l border-gray-700 p-3">
       {/* Scrollable transcript area */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto p-4 min-h-0">
         <ChatTranscript messages={messages} />
       </div>
 
-      {/* Chat input - sticky at bottom */}
-      <div className="sticky bottom-0 h-14 flex items-center bg-background border-gray-700 flex-col rounded-xl border p-3 drop-shadow-md/3">
+      {/* Chat input - fixed at bottom */}
+      <div className="h-14 flex items-center bg-background border-gray-700 flex-col rounded-xl border p-3 drop-shadow-md/3">
         <ChatInput
           chatOpen={true}
           isAgentAvailable={isAgentAvailable}

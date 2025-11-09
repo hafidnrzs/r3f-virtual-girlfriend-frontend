@@ -6,6 +6,7 @@ import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { button, useControls } from "leva";
 import React, { useEffect, useRef, useState } from "react";
+import { useRemoteParticipants } from "@livekit/components-react";
 
 import * as THREE from "three";
 import { useChat } from "../hooks/useChat";
@@ -74,10 +75,21 @@ const corresponding = {
 let setupMode = false;
 
 export function Avatar(props) {
+  const { isPIPMode = false } = props;
   const { nodes, materials, scene } = useGLTF("models/model-hijab.glb");
   const { message, onMessagePlayed, chat } = useChat();
+  const participants = useRemoteParticipants();
 
   const [lipsync, setLipsync] = useState();
+  const [audioVolume, setAudioVolume] = useState(0);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const dataArrayRef = useRef(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const speakingTimeoutRef = useRef(null);
+
+  // Load animations early
+  const { animations } = useGLTF("/models/animations.glb");
 
   useEffect(() => {
     console.log(message);
@@ -85,22 +97,160 @@ export function Avatar(props) {
       setAnimation("Idle");
       return;
     }
-    setAnimation(message.animation);
+
+    // Override animation - only use Talking, ignore gesture animations from backend
+    const allowedAnimations = ["Talking_0", "Talking_1", "Talking"];
+    const messageAnim = message.animation;
+
+    // Check if message animation is allowed, otherwise force to Talking
+    const isAllowedAnimation = allowedAnimations.some(name =>
+      messageAnim && messageAnim.includes(name)
+    );
+
+    if (isAllowedAnimation) {
+      setAnimation(message.animation);
+    } else {
+      // Force to Talking animation instead of gesture
+      const talkingAnim = animations.find((a) =>
+        allowedAnimations.some((name) => a.name.includes(name))
+      );
+      setAnimation(talkingAnim ? talkingAnim.name : "Idle");
+    }
+
     setFacialExpression(message.facialExpression);
     setLipsync(message.lipsync);
     const audio = new Audio("data:audio/mp3;base64," + message.audio);
     audio.play();
     setAudio(audio);
     audio.onended = onMessagePlayed;
-  }, [message]);
+  }, [message, animations]);
 
-  const { animations } = useGLTF("/models/animations.glb");
+  // Setup audio analyzer for LiveKit real-time lip sync
+  useEffect(() => {
+    const agentParticipant = participants.find((p) => p.isAgent);
+    if (!agentParticipant) {
+      return;
+    }
+
+    const audioTrack = agentParticipant.audioTrackPublications.values().next()
+      .value?.track;
+    if (!audioTrack || !audioTrack.mediaStreamTrack) {
+      return;
+    }
+
+    // Create audio context and analyzer
+    const audioContext = new (window.AudioContext ||
+      window.webkitAudioContext)();
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.8;
+
+    const mediaStream = new MediaStream([audioTrack.mediaStreamTrack]);
+    const source = audioContext.createMediaStreamSource(mediaStream);
+    source.connect(analyser);
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    audioContextRef.current = audioContext;
+    analyserRef.current = analyser;
+    dataArrayRef.current = dataArray;
+
+    let animationFrameId;
+
+    // Analyze audio volume in animation loop
+    const analyzeAudio = () => {
+      if (analyserRef.current && dataArrayRef.current) {
+        analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+
+        // Calculate average volume (0-1)
+        const sum = dataArrayRef.current.reduce((a, b) => a + b, 0);
+        const average = sum / dataArrayRef.current.length / 255;
+
+        setAudioVolume(average);
+      }
+      animationFrameId = requestAnimationFrame(analyzeAudio);
+    };
+
+    analyzeAudio();
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, [participants]);
 
   const group = useRef();
   const { actions, mixer } = useAnimations(animations, group);
   const [animation, setAnimation] = useState(
     animations.find((a) => a.name === "Idle") ? "Idle" : animations[0].name // Check if Idle animation exists otherwise use first animation
   );
+
+  // Auto-switch animation based on speaking state (only when NOT in PIP mode)
+  useEffect(() => {
+    // Disable auto-animation in PIP mode
+    if (isPIPMode) {
+      // In PIP mode, always stay Idle
+      if (animation !== "Idle") {
+        setAnimation("Idle");
+      }
+      setIsSpeaking(false);
+      return;
+    }
+
+    const threshold = 0.02; // Audio volume threshold for speaking detection
+
+    if (audioVolume > threshold) {
+      // Audio detected - switch to talking animation
+      if (!isSpeaking) {
+        setIsSpeaking(true);
+
+        // Find Talking animation
+        const talkingAnimations = ["Talking_0", "Talking_1", "Talking"];
+
+        const talkingAnim = animations.find((a) =>
+          talkingAnimations.some((name) => a.name.includes(name))
+        );
+
+        if (talkingAnim && !message) {
+          // Only auto-switch if not playing pre-recorded message animation
+          setAnimation(talkingAnim.name);
+        }
+      }
+
+      // Reset timeout
+      if (speakingTimeoutRef.current) {
+        clearTimeout(speakingTimeoutRef.current);
+      }
+
+      // Set timeout to return to idle after 1 second of silence
+      speakingTimeoutRef.current = setTimeout(() => {
+        setIsSpeaking(false);
+        if (!message) {
+          setAnimation("Idle");
+        }
+      }, 1000);
+    } else {
+      // No audio - ensure we're back to Idle when not speaking
+      if (isSpeaking && !message) {
+        if (speakingTimeoutRef.current) {
+          clearTimeout(speakingTimeoutRef.current);
+        }
+        setIsSpeaking(false);
+        setAnimation("Idle");
+      }
+    }
+
+    return () => {
+      if (speakingTimeoutRef.current) {
+        clearTimeout(speakingTimeoutRef.current);
+      }
+    };
+  }, [audioVolume, animations, message, isSpeaking, isPIPMode, animation]);
+
   useEffect(() => {
     actions[animation]
       .reset()
@@ -186,6 +336,36 @@ export function Avatar(props) {
       }
       lerpMorphTarget(value, 0, 0.1);
     });
+
+    // Real-time audio-based lip sync (when no pre-recorded lipsync data)
+    if (!lipsync && audioVolume > 0.01) {
+      // Map audio volume to mouth movements
+      // Use multiple visemes for more natural look
+      const volumeAmplified = Math.min(audioVolume * 3, 1); // Amplify for visibility
+
+      // Open mouth based on volume
+      lerpMorphTarget("jawOpen", volumeAmplified * 0.5, 0.3);
+      lerpMorphTarget("mouthOpen", volumeAmplified * 0.4, 0.3);
+
+      // Alternate between different mouth shapes for variation
+      const time = Date.now() / 100;
+      const variation = Math.sin(time) * 0.5 + 0.5; // 0-1
+
+      if (variation > 0.6) {
+        lerpMorphTarget("viseme_AA", volumeAmplified * 0.6, 0.2); // "ah" sound
+      } else if (variation > 0.3) {
+        lerpMorphTarget("viseme_O", volumeAmplified * 0.5, 0.2); // "oh" sound
+      } else {
+        lerpMorphTarget("viseme_I", volumeAmplified * 0.4, 0.2); // "ee" sound
+      }
+    } else if (!lipsync) {
+      // Close mouth when no audio
+      lerpMorphTarget("jawOpen", 0, 0.2);
+      lerpMorphTarget("mouthOpen", 0, 0.2);
+      lerpMorphTarget("viseme_AA", 0, 0.1);
+      lerpMorphTarget("viseme_O", 0, 0.1);
+      lerpMorphTarget("viseme_I", 0, 0.1);
+    }
   });
 
   useControls("FacialExpressions", {
