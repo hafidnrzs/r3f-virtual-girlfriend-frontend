@@ -75,7 +75,9 @@ function App() {
         <ChatProvider>
           <IllustrationProvider>
             <div className="relative w-full h-full overflow-hidden">
-              <SimpleAssistant onConnectButtonClicked={onConnectButtonClicked} />
+              <SimpleAssistant
+                onConnectButtonClicked={onConnectButtonClicked}
+              />
             </div>
           </IllustrationProvider>
         </ChatProvider>
@@ -116,15 +118,15 @@ function SimpleAssistant(props: { onConnectButtonClicked: () => void }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3, ease: [0.09, 1.04, 0.245, 1.055] }}
-          className="h-screen grid grid-rows-[1fr_auto]"
+          className="h-screen max-h-screen grid grid-rows-[1fr_auto] overflow-hidden"
         >
           <Leva hidden />
           <LayoutContextProvider>
             {/* Register RPC handler */}
             <IllustrationRpcHandler />
-            
+
             {/* Main content row - fixed 70/30 split */}
-            <div className="grid grid-cols-1 md:grid-cols-[7fr_3fr] gap-4 overflow-hidden h-full">
+            <div className="grid grid-cols-1 md:grid-cols-[7fr_3fr] gap-4 overflow-hidden min-h-0">
               <AvatarPanel />
               <ChatPanel />
             </div>

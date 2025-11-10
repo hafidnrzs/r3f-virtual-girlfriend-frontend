@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { type ReceivedChatMessage } from "@livekit/components-react";
 import { AnimatePresence, HTMLMotionProps, motion } from "motion/react";
 import { ChatEntry } from "./ChatEntry";
@@ -14,10 +15,19 @@ export function ChatTranscript({
   messages = mockShortConversation,
   ...props
 }: ChatTranscriptProps & Omit<HTMLMotionProps<"div">, "ref">) {
+  const scrollRef = useRef<HTMLUListElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages]);
+
   return (
     <AnimatePresence>
       <motion.div {...props}>
-        <ul className="space-y-3">
+        <ul ref={scrollRef} className="space-y-3">
           {messages.map(
             ({
               id,

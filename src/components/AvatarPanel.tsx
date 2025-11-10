@@ -38,8 +38,11 @@ export function AvatarPanel() {
   };
 
   return (
-    <div className="flex flex-col overflow-hidden h-full">
-      <div ref={containerRef} className="flex-1 w-full relative min-h-0">
+    <div className="flex flex-col overflow-hidden h-full min-h-0">
+      <div
+        ref={containerRef}
+        className="flex-1 w-full relative min-h-0 overflow-hidden"
+      >
         {illustrationVisible ? (
           // Mode B: Illustration + Floating Avatar (can be switched)
           <>
@@ -129,11 +132,18 @@ export function AvatarPanel() {
                   aria-label="Floating view - drag to move"
                 >
                   {/* Control Bar */}
-                  <div className="flex gap-1 mb-1 justify-end" onPointerDown={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex gap-1 mb-1 justify-end"
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
                     <button
                       onClick={() => setIsSwitched(!isSwitched)}
                       className="bg-black/60 hover:bg-black/80 text-white rounded px-2 py-1 text-xs font-medium transition-colors backdrop-blur-sm"
-                      title={isSwitched ? "Show Avatar in frame" : "Show Illustration in frame"}
+                      title={
+                        isSwitched
+                          ? "Show Avatar in frame"
+                          : "Show Illustration in frame"
+                      }
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -201,7 +211,11 @@ export function AvatarPanel() {
                       <Canvas
                         shadows
                         camera={{ position: [0, 1.5, 1.2], fov: 28 }}
-                        style={{ width: "100%", height: "100%", pointerEvents: "none" }}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          pointerEvents: "none",
+                        }}
                         gl={{ alpha: true }}
                         key="pip-canvas-avatar"
                       >

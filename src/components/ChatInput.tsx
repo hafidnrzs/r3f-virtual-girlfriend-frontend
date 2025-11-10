@@ -45,10 +45,10 @@ export function ChatInput({
   }, [chatOpen, isAgentAvailable]);
 
   return (
-    <motion.div className=" flex w-full items-start overflow-hidden">
+    <motion.div className="flex w-full items-center overflow-hidden">
       <form
         onSubmit={handleSubmit}
-        className="mb-3 flex grow items-center gap-2 rounded-md pl-1 text-sm"
+        className="flex grow items-center gap-2 rounded-md pl-1 text-sm w-full"
       >
         <input
           autoFocus
@@ -58,7 +58,7 @@ export function ChatInput({
           disabled={!chatOpen}
           placeholder="Type something..."
           onChange={(e) => setMessage(e.target.value)}
-          className="h-8 flex-1 pb-1 bg-transparent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-8 flex-1 bg-transparent focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button
           size="icon"
@@ -66,7 +66,7 @@ export function ChatInput({
           disabled={isDisabled}
           variant={isDisabled ? "secondary" : "primary"}
           title={isSending ? "Sending..." : "Send"}
-          className="self-start"
+          className="flex-shrink-0"
         >
           {isSending ? (
             <SpinnerIcon className="animate-spin" weight="bold" />
