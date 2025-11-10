@@ -98,26 +98,27 @@ export function Avatar(props) {
       return;
     }
 
-    // Override animation - only use Talking, ignore gesture animations from backend
-    const allowedAnimations = ["Talking_0", "Talking_1", "Talking"];
-    const messageAnim = message.animation;
+    // // Override animation - only use Talking, ignore gesture animations from backend
+    // const allowedAnimations = ["Talking_0", "Talking_1", "Talking"];
+    // const messageAnim = message.animation;
 
-    // Check if message animation is allowed, otherwise force to Talking
-    const isAllowedAnimation = allowedAnimations.some(name =>
-      messageAnim && messageAnim.includes(name)
-    );
+    // // Check if message animation is allowed, otherwise force to Talking
+    // const isAllowedAnimation = allowedAnimations.some(
+    //   (name) => messageAnim && messageAnim.includes(name)
+    // );
 
-    if (isAllowedAnimation) {
-      setAnimation(message.animation);
-    } else {
-      // Force to Talking animation instead of gesture
-      const talkingAnim = animations.find((a) =>
-        allowedAnimations.some((name) => a.name.includes(name))
-      );
-      setAnimation(talkingAnim ? talkingAnim.name : "Idle");
-    }
+    // if (isAllowedAnimation) {
+    //   setAnimation(message.animation);
+    // } else {
+    //   // Force to Talking animation instead of gesture
+    //   const talkingAnim = animations.find((a) =>
+    //     allowedAnimations.some((name) => a.name.includes(name))
+    //   );
+    //   setAnimation(talkingAnim ? talkingAnim.name : "Idle");
+    // }
 
-    setFacialExpression(message.facialExpression);
+    // setFacialExpression(message.facialExpression);
+    setFacialExpression("smile");
     setLipsync(message.lipsync);
     const audio = new Audio("data:audio/mp3;base64," + message.audio);
     audio.play();
@@ -215,10 +216,10 @@ export function Avatar(props) {
           talkingAnimations.some((name) => a.name.includes(name))
         );
 
-        if (talkingAnim && !message) {
-          // Only auto-switch if not playing pre-recorded message animation
-          setAnimation(talkingAnim.name);
-        }
+        // if (talkingAnim && !message) {
+        //   // Only auto-switch if not playing pre-recorded message animation
+        //   setAnimation(talkingAnim.name);
+        // }
       }
 
       // Reset timeout
