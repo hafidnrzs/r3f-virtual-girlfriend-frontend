@@ -53,16 +53,21 @@ export function AvatarPanel() {
             ) : (
               // Switched: Avatar in background
               agentState !== "disconnected" && (
-                <Canvas
-                  shadows
-                  camera={{ position: [0, 0, 1], fov: 30 }}
-                  style={{ width: "100%", height: "100%" }}
-                  className="relative z-0"
-                  gl={{ alpha: true }}
-                  key="switched-bg-canvas"
-                >
-                  <Experience key="switched-bg-experience" isPIPMode={false} />
-                </Canvas>
+                <div className="w-full h-full bg-gray-900">
+                  <Canvas
+                    shadows
+                    camera={{ position: [0, 0, 1], fov: 30 }}
+                    style={{ width: "100%", height: "100%" }}
+                    className="relative z-0"
+                    gl={{ alpha: true }}
+                    key="switched-bg-canvas"
+                  >
+                    <Experience
+                      key="switched-bg-experience"
+                      isPIPMode={false}
+                    />
+                  </Canvas>
+                </div>
               )
             )}
 
@@ -207,23 +212,30 @@ export function AvatarPanel() {
                     className={`${frameSizes[frameSize]} rounded-lg overflow-hidden shadow-2xl border border-white/30 hover:border-white/50 transition-all cursor-grab active:cursor-grabbing`}
                   >
                     {!isSwitched ? (
-                      // Avatar in frame
-                      <Canvas
-                        shadows
-                        camera={{ position: [0, 1.5, 1.2], fov: 28 }}
+                      // Avatar in frame with background image
+                      <div
+                        className="w-full h-full bg-cover bg-center bg-no-repeat"
                         style={{
-                          width: "100%",
-                          height: "100%",
-                          pointerEvents: "none",
+                          backgroundImage: "url(/images/image2-151.png)",
                         }}
-                        gl={{ alpha: true }}
-                        key="pip-canvas-avatar"
                       >
-                        <Experience key="pip-experience" isPIPMode={true} />
-                      </Canvas>
+                        <Canvas
+                          shadows
+                          camera={{ position: [0, 1.5, 1.2], fov: 28 }}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            pointerEvents: "none",
+                          }}
+                          gl={{ alpha: true }}
+                          key="pip-canvas-avatar"
+                        >
+                          <Experience key="pip-experience" isPIPMode={true} />
+                        </Canvas>
+                      </div>
                     ) : (
-                      // Illustration in frame
-                      <div className="w-full h-full relative bg-gradient-to-br from-gray-100 to-gray-200">
+                      // Illustration in frame with dark background
+                      <div className="w-full h-full relative bg-gray-900">
                         <Illustration />
                       </div>
                     )}
@@ -236,16 +248,18 @@ export function AvatarPanel() {
           // Mode A: Full Avatar (No Illustration)
           <>
             {agentState !== "disconnected" ? (
-              <Canvas
-                shadows
-                camera={{ position: [0, 0, 1], fov: 30 }}
-                style={{ width: "100%", height: "100%" }}
-                className="relative z-10"
-                gl={{ alpha: true }}
-                key="normal-canvas"
-              >
-                <Experience key="normal-experience" isPIPMode={false} />
-              </Canvas>
+              <div className="w-full h-full bg-gray-900">
+                <Canvas
+                  shadows
+                  camera={{ position: [0, 0, 1], fov: 30 }}
+                  style={{ width: "100%", height: "100%" }}
+                  className="relative z-10"
+                  gl={{ alpha: true }}
+                  key="normal-canvas"
+                >
+                  <Experience key="normal-experience" isPIPMode={false} />
+                </Canvas>
+              </div>
             ) : (
               <div className="absolute inset-0 z-10 flex items-center justify-center text-gray-400 text-center">
                 <div>

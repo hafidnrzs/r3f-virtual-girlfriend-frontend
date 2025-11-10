@@ -70,7 +70,10 @@ function App() {
   }, [room]);
 
   return (
-    <main data-lk-theme="default" className="h-full bg-[var(--lk-bg)]">
+    <main
+      data-lk-theme="default"
+      className="h-full bg-cover bg-center bg-no-repeat"
+    >
       <RoomContext.Provider value={room}>
         <ChatProvider>
           <IllustrationProvider>

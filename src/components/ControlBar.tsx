@@ -25,7 +25,7 @@ export function ControlBar({
   const { micTrackRef, microphoneToggle } = useInputControls();
 
   return (
-    <div className="w-full h-16 border-t border-gray-700 flex items-center justify-center px-6">
+    <div className="w-full h-16 border-t border-gray-700 bg-gray-900 flex items-center justify-center px-6">
       <div className="flex items-center gap-3">
         {/* Microphone toggle */}
         <TrackSelector
